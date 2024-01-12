@@ -36,14 +36,19 @@ public class ProducerDemoKeys {
         // Create the Producer
         KafkaProducer<String, String> producer = new KafkaProducer<>(properties);
 
-        // Sending multiple batches of messages to better demonstrate the behaviour of StickyPartitioner
-        for (int j = 0; j < 10; j++){
-            // Sending multiple messages very quickly, the Producer uses StickyPartitioner to improve the performance (a batch of messages is sent to the same partition in a topic).
-            // Otherwise, the Producer will use Round Robin
-            for (int i = 0; i < 30; i++){
+        // Sending multiple messages with the same key to see if they end up in the same partition
+        for (int j = 0; j < 2; j++){
+
+            // Sending messages to a specified topic with a specified key
+            for (int i = 0; i < 10; i++){
+
+                String topic = "demo_java";
+                String key = "id_" + i;
+                String value = "hello world" + i;
+
                 // Create a Producer Record
                 ProducerRecord<String, String> producerRecord =
-                        new ProducerRecord<>("demo_java", "hello world" + i);
+                        new ProducerRecord<>(topic, key, value);
 
 
                 // Send Data -- asynchronous operation
@@ -53,26 +58,19 @@ public class ProducerDemoKeys {
                         //executes every time a record is successfully sent or an exception is thrown
                         if (e == null) {
                             // the record was successfully sent
-                            log.info("Received new metadata \n" +
-                                    "Topic: " + metadata.topic() + "\n" +
-                                    "Partition: " + metadata.partition() + "\n" +
-                                    "Offset: " + metadata.offset() + "\n" +
-                                    "Timestamp: " + metadata.timestamp());
+                            log.info("Key: " + key + " | Partition: " + metadata.partition());
                         } else {
                             log.error("Error while producing", e);
                         }
                     }
                 });
             }
-
-            // After sending a batch of messages, the Producer will wait 500 ms before sending a new batch of messages
             try {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
         }
-
 
         // Flush and Close the Producer
         // Flush
