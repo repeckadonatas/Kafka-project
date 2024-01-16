@@ -11,6 +11,12 @@ repositories {
 
 dependencies {
 
+    // Since kafka client version is >= 3.0.0, the kafka producer is considered "safe" (acks = -1;
+    //                                                                              delivery.timeout.ms = 120000;
+    //                                                                              enable.idempotence = true;
+    //                                                                              retries = 2147483647);
+    // For kafka clients <= 2.8, it is recommended to use "safe" producers as much as possible
+    // (change default settings to make producers "safe")
     // https://mvnrepository.com/artifact/org.apache.kafka/kafka-clients
     implementation("org.apache.kafka:kafka-clients:3.6.1")
 
