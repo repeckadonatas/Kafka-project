@@ -27,7 +27,7 @@ public class ConsumerDemo {
         Properties properties = new Properties();
 
         // connect to localhost
-//        properties.setProperty("bootstrap.servers", "localhost:9092");
+//        properties.setProperty("bootstrap.servers", "localhost:9092"); // does not work
 
         // connect to Conduktor Playground (setup Conduktor first!!!)
         properties.setProperty("bootstrap.servers", "suited-raptor-8496-eu2-kafka.upstash.io:9092");
