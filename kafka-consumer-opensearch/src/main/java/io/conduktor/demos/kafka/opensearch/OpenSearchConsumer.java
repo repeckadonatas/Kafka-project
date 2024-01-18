@@ -11,6 +11,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.opensearch.action.index.IndexRequest;
 import org.opensearch.action.index.IndexResponse;
@@ -116,6 +117,28 @@ public class OpenSearchConsumer {
         // Create Kafka Client
         KafkaConsumer<String, String> consumer = createKafkaConsumer();
 
+
+        // To gracefully shutdown Kafka Consumer using Shutdown hook
+        // Shutdown hook
+        // Get a reference to the main Thread
+        final Thread mainThread = Thread.currentThread();
+
+        // Adding a Shutdown Hook
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            public void run() {
+                log.info("Detected a shutdown, let's begin by calling consumer.wakeup()...");
+                consumer.wakeup();
+
+                // Join the main thread to allow of execution of the code in the main thread
+                try {
+                    mainThread.join();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+
         // Create an index on OpenSearch if it doesn't exist already
         try(openSearchClient; consumer) {
 
@@ -177,7 +200,14 @@ public class OpenSearchConsumer {
                 }
 
             }
+        } catch (WakeupException e) {
+            log.info("Consumer is starting to shut down");
+        } catch (Exception e) {
+            log.error("Unexpected exception in the consumer", e);
+        } finally {
+            consumer.close(); // Close the consumer. This will also commit offsets
+            openSearchClient.close();
+            log.info("The Consumer is now gracefully shut down");
         }
-
     }
 }
